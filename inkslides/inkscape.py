@@ -3,13 +3,21 @@ import subprocess
 
 
 class InkscapeWorker(multiprocessing.Process):
-    def __init__(self, queue):
+    def __init__(self, queue, log=False):
         super(InkscapeWorker, self).__init__()
         self.queue = queue
+        self.log = log
 
     def wait_for_inkscape(self):
-        while self.ink.stdout.read(1) != b'>':
-            pass
+        while(True):
+            char = self.ink.stdout.read(1)
+            if(self.log):
+                try:
+                    print(char.decode('utf-8'),end='')
+                except UnicodeDecodeError:
+                    print(char)
+            if char == b'>':
+                break
 
     def run(self):
         # this is our inkscape worker
@@ -28,7 +36,7 @@ class InkscapeWorker(multiprocessing.Process):
             # The variable ready keeps track of that.
 
             if not cached:
-                command = '-A "{1}" "{0}"\n'.format(svg_file, pdf_file_name)
+                command = f'file-open:{svg_file}; export-filename:{pdf_file_name}; export-type:pdf; export-do;\n'
                 self.ink.stdin.write(command.encode("UTF-8"))
                 self.ink.stdin.flush()
 
